@@ -16,7 +16,8 @@ var consumer2 = new Consumer().Init(network, "2",destinations);
 while (true)
 {
     await publisher.send();
+    await Task.Delay(2000);
     Console.WriteLine("....");
-    Thread.Sleep(4000);
+    
     
 }
