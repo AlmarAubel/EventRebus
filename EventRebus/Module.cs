@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Rebus.Activation;
+using Rebus.Bus;
 using Rebus.Config;
 
 using Rebus.Handlers;
@@ -14,26 +15,27 @@ namespace EventRebus;
 public class Publisher
 {
     private ServiceCollection _services;
-    private BuiltinHandlerActivator _activator1;
+    private ServiceProvider _provider;
 
     public Publisher Init(InMemNetwork inMemNetwork, string[] queues)
     {
         _services = new ServiceCollection();
-
-        _activator1 = new BuiltinHandlerActivator();
         var queueName = "publisher"; // start bus 1
-
-        Configure.With(_activator1)
-            .Transport(t => t.UseInMemoryTransport(inMemNetwork, queueName ))
-            .Logging(t => t.ColoredConsole())
-            .Subscriptions(s=> s.StoreInMemory())
-            .Start();
         
+        _services.AddRebus(config => config
+            .Transport(t => t.UseInMemoryTransport(inMemNetwork, queueName))
+            .Logging(t => t.ColoredConsole())
+            .Subscriptions(s => s.StoreInMemory())
+        );
+        
+        _provider = _services.BuildServiceProvider();
+        _provider.UseRebus();
         return this;
     }
 
     public async Task send()
     {
-        await _activator1.Bus.Publish(new MessageEvent("test"));
+        var bus = _provider.GetRequiredService<IBus>();
+        await bus.Publish(new MessageEvent("test"));
     }
 }
